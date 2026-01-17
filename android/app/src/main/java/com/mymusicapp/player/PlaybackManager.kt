@@ -7,10 +7,9 @@ import com.google.android.exoplayer2.util.MimeTypes
 
 class PlaybackManager(context: Context) {
 
-    private val player: ExoPlayer = ExoPlayer.Builder(context).build()
+    private val player = ExoPlayer.Builder(context).build()
 
     fun play(url: String) {
-        
         val mediaItem = MediaItem.Builder()
             .setUri(url)
             .setMimeType(MimeTypes.AUDIO_AAC)
@@ -31,5 +30,9 @@ class PlaybackManager(context: Context) {
 
     fun release() {
         player.release()
+    }
+
+    fun getCurrentPosition(): Long {
+        return player.currentPosition
     }
 }
