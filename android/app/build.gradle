@@ -116,4 +116,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // AndroidX Media (MediaBrowser / MediaSession)
+    implementation "androidx.media:media:1.6.0"
+
+    // ExoPlayer (AAC streaming)
+    implementation "com.google.android.exoplayer:exoplayer-core:2.19.1"
+    implementation "com.google.android.exoplayer:exoplayer-ui:2.19.1"
 }
