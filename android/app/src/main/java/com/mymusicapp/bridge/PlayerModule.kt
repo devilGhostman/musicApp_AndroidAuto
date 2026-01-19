@@ -1,56 +1,12 @@
-// package com.mymusicapp.bridge
-
-// import android.os.Handler
-// import android.os.Looper
-// import com.facebook.react.bridge.*
-// import android.content.Intent
-
-// import com.mymusicapp.player.PlaybackManager
-// import com.mymusicapp.player.MusicService
-
-
-// class PlayerModule(
-//     reactContext: ReactApplicationContext
-// ) : ReactContextBaseJavaModule(reactContext) {
-
-//     private val playbackManager = PlaybackManager(reactContext)
-//     private val mainHandler = Handler(Looper.getMainLooper())
-
-//     override fun getName(): String = "PlayerModule"
-
-//     @ReactMethod
-//     fun play(track: ReadableMap) {
-//         val url = track.getString("url") ?: return
-
-//         val intent = Intent(reactApplicationContext, MusicService::class.java).apply {
-//             putExtra("PLAY_URL", url)
-//         }
-
-//         reactApplicationContext.startService(intent)
-//     }
-
-//     @ReactMethod
-//     fun pause() {
-//         mainHandler.post {
-//             playbackManager.pause()
-//         }
-//     }
-
-//     @ReactMethod
-//     fun resume() {
-//         mainHandler.post {
-//             playbackManager.resume()
-//         }
-//     }
-// }
-
-
-
 package com.mymusicapp.bridge
 
 import android.content.Intent
 import com.facebook.react.bridge.*
 import com.mymusicapp.player.MusicService
+import org.json.JSONArray
+import org.json.JSONObject
+import android.content.Context
+
 
 class PlayerModule(
     private val reactContext: ReactApplicationContext
@@ -60,7 +16,7 @@ class PlayerModule(
 
     @ReactMethod
     fun play(track: ReadableMap) {
-        val url = track.getString("url") ?: return
+        val url = track.getString("radioUrl") ?: return
         val title = track.getString("title") ?: "MyMusicApp"
 
         val intent = Intent(reactContext, MusicService::class.java).apply {
@@ -87,5 +43,30 @@ class PlayerModule(
         }
         reactContext.startService(intent)
     }
+
+    @ReactMethod
+    fun updateTracks(tracks: ReadableArray) {
+        val prefs = reactApplicationContext
+            .getSharedPreferences("tracks_store", Context.MODE_PRIVATE)
+
+        val jsonArray = JSONArray()
+
+        for (i in 0 until tracks.size()) {
+            val map = tracks.getMap(i) ?: continue
+            val obj = JSONObject()
+
+            obj.put("id", map.getString("id"))
+            obj.put("title", map.getString("title"))
+            obj.put("artist", map.getString("artist"))
+            obj.put("radioUrl", map.getString("radioUrl"))
+
+            jsonArray.put(obj)
+        }
+
+        prefs.edit()
+            .putString("tracks_json", jsonArray.toString())
+            .apply()
+    }
+
 }
 
