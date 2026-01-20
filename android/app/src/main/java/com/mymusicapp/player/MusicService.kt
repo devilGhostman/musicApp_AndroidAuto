@@ -28,6 +28,8 @@ class MusicService : MediaBrowserServiceCompat() {
 
         const val EXTRA_URL = "EXTRA_URL"
         const val EXTRA_TITLE = "EXTRA_TITLE"
+        const val EXTRA_ARTIST = "EXTRA_ARTIST"
+        const val EXTRA_THUMBNAIL_URL = ""
 
         const val NOTIFICATION_ID = 1
         const val CHANNEL_ID = "media"
@@ -94,11 +96,13 @@ class MusicService : MediaBrowserServiceCompat() {
             ACTION_PLAY -> {
                 val url = intent.getStringExtra(EXTRA_URL) ?: return START_NOT_STICKY
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "MyMusicApp"
+                val artist = intent.getStringExtra(EXTRA_ARTIST) ?: ""
+                val thumbnailUrl = intent.getStringExtra(EXTRA_THUMBNAIL_URL) ?: ""
 
                 currentIndex = tracks.indexOfFirst { it.radioUrl == url }
 
                 playbackManager.play(url)
-                updateMetadata(title, "Radio")
+                updateMetadata(title, artist, thumbnailUrl)
                 updatePlaybackState(true)
 
                 startForeground(NOTIFICATION_ID, buildNotification())
@@ -146,6 +150,7 @@ class MusicService : MediaBrowserServiceCompat() {
                     .setMediaId(track.id)
                     .setTitle(track.title)
                     .setSubtitle(track.artist)
+                    .setIconUri(Uri.parse(track.thumbnailUrl))
                     .build(),
                 MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
             )
@@ -177,7 +182,8 @@ class MusicService : MediaBrowserServiceCompat() {
                     id = obj.getString("id"),
                     title = obj.getString("title"),
                     artist = obj.getString("artist"),
-                    radioUrl = obj.getString("radioUrl")
+                    radioUrl = obj.getString("radioUrl"),
+                    thumbnailUrl = obj.getString("thumbnailUrl")
                 )
             )
         }
@@ -190,7 +196,7 @@ class MusicService : MediaBrowserServiceCompat() {
 
         val track = tracks[currentIndex]
         playbackManager.play(track.radioUrl)
-        updateMetadata(track.title, track.artist)
+        updateMetadata(track.title, track.artist, track.thumbnailUrl)
         updatePlaybackState(true)
     }
 
@@ -207,10 +213,11 @@ class MusicService : MediaBrowserServiceCompat() {
         playCurrent()
     }
 
-    private fun updateMetadata(title: String, artist: String) {
+    private fun updateMetadata(title: String, artist: String, thumbnailUrl: String? = null) {
         val metadata = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
+            .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, thumbnailUrl)
             .build()
 
         mediaSession.setMetadata(metadata)

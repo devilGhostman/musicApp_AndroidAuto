@@ -5,4 +5,5 @@ data class Track(
     val title: String,
     val artist: String,
     val radioUrl: String,
+    val thumbnailUrl: String
 )

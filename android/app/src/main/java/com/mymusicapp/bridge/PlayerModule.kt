@@ -9,7 +9,6 @@ import android.content.Context
 import android.os.Build
 
 
-
 class PlayerModule(
     private val reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
@@ -92,6 +91,7 @@ class PlayerModule(
             obj.put("title", map.getString("title"))
             obj.put("artist", map.getString("artist"))
             obj.put("radioUrl", map.getString("radioUrl"))
+            obj.put("thumbnailUrl", map.getString("thumbnailUrl"))
 
             jsonArray.put(obj)
         }
