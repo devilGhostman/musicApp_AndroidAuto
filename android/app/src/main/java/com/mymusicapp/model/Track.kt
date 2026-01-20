@@ -4,5 +4,5 @@ data class Track(
     val id: String,
     val title: String,
     val artist: String,
-    val radioUrl: String
+    val radioUrl: String,
 )

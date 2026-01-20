@@ -6,6 +6,8 @@ import com.mymusicapp.player.MusicService
 import org.json.JSONArray
 import org.json.JSONObject
 import android.content.Context
+import android.os.Build
+
 
 
 class PlayerModule(
@@ -13,6 +15,15 @@ class PlayerModule(
 ) : ReactContextBaseJavaModule(reactContext) {
 
     override fun getName(): String = "PlayerModule"
+
+    private fun start(intent: Intent) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        reactContext.startForegroundService(intent)
+    } else {
+        reactContext.startService(intent)
+    }
+}
+
 
     @ReactMethod
     fun play(track: ReadableMap) {
@@ -26,6 +37,7 @@ class PlayerModule(
         }
 
         reactContext.startService(intent)
+        start(intent)
     }
 
     @ReactMethod
@@ -34,6 +46,7 @@ class PlayerModule(
             action = MusicService.ACTION_PAUSE
         }
         reactContext.startService(intent)
+        start(intent)
     }
 
     @ReactMethod
@@ -42,7 +55,27 @@ class PlayerModule(
             action = MusicService.ACTION_RESUME
         }
         reactContext.startService(intent)
+        start(intent)
     }
+
+    @ReactMethod
+    fun next() {
+        val intent = Intent(reactContext, MusicService::class.java).apply {
+            action = MusicService.ACTION_NEXT
+        }
+        reactContext.startService(intent)
+        start(intent)
+    }
+
+    @ReactMethod
+    fun previous() {
+        val intent = Intent(reactContext, MusicService::class.java).apply {
+            action = MusicService.ACTION_PREVIOUS
+        }
+        reactContext.startService(intent)
+        start(intent)
+    }
+
 
     @ReactMethod
     fun updateTracks(tracks: ReadableArray) {

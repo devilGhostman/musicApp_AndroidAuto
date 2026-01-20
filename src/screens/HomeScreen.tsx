@@ -9,18 +9,24 @@ const TRACKS = [
     artist: 'Demo Artist',
     radioUrl:
       ' https://playerservices.streamtheworld.com/api/livestream-redirect/RAKITAAAC.aac',
+    thumbnailUrl:
+      'https://cdn6.mogiio.com/661384178820be00085a7121/2025/10/02/09-27-30/thumbnail/383.png',
   },
   {
     id: '2',
     title: 'Cats',
     artist: 'Demo Artist',
     radioUrl: 'https://stream.rcs.revma.com/ggz4zeuv0y3vv',
+    thumbnailUrl :'https://cdn6.mogiio.com/661384178820be00085a7121/2025/10/02/09-27-30/thumbnail/383.png'
+
   },
   {
     id: '3',
     title: 'Manis',
     artist: 'Demo Artist',
     radioUrl: 'https://stream.rcs.revma.com/nzgauqq1v7zuv',
+    thumbnailUrl :'https://cdn6.mogiio.com/661384178820be00085a7121/2025/10/02/09-27-30/thumbnail/383.png'
+
   },
   {
     id: '4',
@@ -28,20 +34,27 @@ const TRACKS = [
     artist: 'Demo Artist',
     radioUrl:
       ' https://playerservices.streamtheworld.com/api/livestream-redirect/RAKITAAAC.aac',
+    thumbnailUrl :'https://cdn6.mogiio.com/661384178820be00085a7121/2025/10/02/09-27-30/thumbnail/383.png'
+
   },
   {
     id: '5',
     title: 'Cats',
     artist: 'Demo Artist',
     radioUrl: 'https://stream.rcs.revma.com/ggz4zeuv0y3vv',
+    thumbnailUrl :'https://cdn6.mogiio.com/661384178820be00085a7121/2025/10/02/09-27-30/thumbnail/383.png'
+
   },
   {
     id: '6',
     title: 'Manis',
     artist: 'Demo Artist',
     radioUrl: 'https://stream.rcs.revma.com/nzgauqq1v7zuv',
+    thumbnailUrl :'https://cdn6.mogiio.com/661384178820be00085a7121/2025/10/02/09-27-30/thumbnail/383.png'
+
   },
 ];
+
 
 export default function HomeScreen() {
   useEffect(() => {
@@ -56,7 +69,7 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={{ backgroundColor: 'lightgray', marginVertical: 10 }}
           onPress={() => {
-            console.log("item::",item);
+            console.log('item::', item);
             Player.play(item);
           }}
         >

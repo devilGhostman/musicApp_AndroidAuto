@@ -23,6 +23,8 @@ class MusicService : MediaBrowserServiceCompat() {
         const val ACTION_PLAY = "com.mymusicapp.PLAY"
         const val ACTION_PAUSE = "com.mymusicapp.PAUSE"
         const val ACTION_RESUME = "com.mymusicapp.RESUME"
+        const val ACTION_NEXT = "com.mymusicapp.NEXT"
+        const val ACTION_PREVIOUS = "com.mymusicapp.PREVIOUS"
 
         const val EXTRA_URL = "EXTRA_URL"
         const val EXTRA_TITLE = "EXTRA_TITLE"
@@ -34,8 +36,14 @@ class MusicService : MediaBrowserServiceCompat() {
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var playbackManager: PlaybackManager
 
+    private lateinit var tracks: List<Track>
+    private var currentIndex = -1
+
+
     override fun onCreate() {
         super.onCreate()
+
+        tracks = loadTracks()
 
         createNotificationChannel()
 
@@ -48,40 +56,29 @@ class MusicService : MediaBrowserServiceCompat() {
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
             )
 
-            // setCallback(object : MediaSessionCompat.Callback() {
-
-            //     override fun onPlay() {
-            //         playbackManager.resume()
-            //         updatePlaybackState(true)
-            //     }
-
-            //     override fun onPause() {
-            //         playbackManager.pause()
-            //         updatePlaybackState(false)
-            //     }
-
-            //     override fun onPlayFromUri(uri: Uri?, extras: Bundle?) {
-            //         uri ?: return
-            //         playbackManager.play(uri.toString())
-            //         updatePlaybackState(true)
-            //     }
-            // })
             setCallback(object : MediaSessionCompat.Callback() {
 
                 override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
-                    val track = loadTracks().find { it.id == mediaId } ?: return
+                    val index = tracks.indexOfFirst { it.id == mediaId }
+                    if (index == -1) return
 
-                    playbackManager.play(track.radioUrl)
-                    updateMetadata(track.title, track.artist)
-                    updatePlaybackState(true)
+                    currentIndex = index
+                    playCurrent()
                 }
 
                 override fun onPause() {
                     playbackManager.pause()
                     updatePlaybackState(false)
                 }
-            })
 
+                override fun onSkipToNext() {
+                    skipToNext()
+                }
+
+                override fun onSkipToPrevious() {
+                    skipToPrevious()
+                }
+            })
 
             isActive = true
         }
@@ -91,10 +88,14 @@ class MusicService : MediaBrowserServiceCompat() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
+        startForeground(NOTIFICATION_ID, buildNotification())
+
         when (intent?.action) {
             ACTION_PLAY -> {
                 val url = intent.getStringExtra(EXTRA_URL) ?: return START_NOT_STICKY
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "MyMusicApp"
+
+                currentIndex = tracks.indexOfFirst { it.radioUrl == url }
 
                 playbackManager.play(url)
                 updateMetadata(title, "Radio")
@@ -112,6 +113,14 @@ class MusicService : MediaBrowserServiceCompat() {
                 playbackManager.resume()
                 updatePlaybackState(true)
             }
+
+            ACTION_NEXT -> {
+                skipToNext()
+            }
+
+            ACTION_PREVIOUS -> {
+                skipToPrevious()
+            }
         }
 
         return START_STICKY
@@ -125,25 +134,11 @@ class MusicService : MediaBrowserServiceCompat() {
         return BrowserRoot("ROOT", null)
     }
 
-    // override fun onLoadChildren(
-    //     parentId: String,
-    //     result: Result<List<MediaBrowserCompat.MediaItem>>
-    // ) {
-    //     val item = MediaBrowserCompat.MediaItem(
-    //         MediaDescriptionCompat.Builder()
-    //             .setMediaId("sample")
-    //             .setTitle("Sample AAC")
-    //             .build(),
-    //         MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
-    //     )
-    //     result.sendResult(listOf(item))
-    // }
-
     override fun onLoadChildren(
         parentId: String,
         result: Result<List<MediaBrowserCompat.MediaItem>>
     ) {
-        val tracks = loadTracks()
+        tracks = loadTracks()
 
         val items = tracks.map { track ->
             MediaBrowserCompat.MediaItem(
@@ -166,6 +161,52 @@ class MusicService : MediaBrowserServiceCompat() {
         super.onDestroy()
     }
 
+
+    private fun loadTracks(): List<Track> {
+        val prefs = getSharedPreferences("tracks_store", MODE_PRIVATE)
+        val json = prefs.getString("tracks_json", null) ?: return emptyList()
+
+        val array = JSONArray(json)
+        val list = mutableListOf<Track>()
+
+        for (i in 0 until array.length()) {
+            val obj = array.getJSONObject(i)
+
+            list.add(
+                Track(
+                    id = obj.getString("id"),
+                    title = obj.getString("title"),
+                    artist = obj.getString("artist"),
+                    radioUrl = obj.getString("radioUrl")
+                )
+            )
+        }
+
+        return list
+    }
+
+    private fun playCurrent() {
+        if (tracks.isEmpty() || currentIndex !in tracks.indices) return
+
+        val track = tracks[currentIndex]
+        playbackManager.play(track.radioUrl)
+        updateMetadata(track.title, track.artist)
+        updatePlaybackState(true)
+    }
+
+    private fun skipToNext() {
+        if (tracks.isEmpty()) return
+        currentIndex = (currentIndex + 1) % tracks.size
+        playCurrent()
+    }
+
+    private fun skipToPrevious() {
+        if (tracks.isEmpty()) return
+        currentIndex =
+            if (currentIndex - 1 < 0) tracks.size - 1 else currentIndex - 1
+        playCurrent()
+    }
+
     private fun updateMetadata(title: String, artist: String) {
         val metadata = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
@@ -185,7 +226,9 @@ class MusicService : MediaBrowserServiceCompat() {
             .setActions(
                 PlaybackStateCompat.ACTION_PLAY or
                 PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_PLAY_PAUSE
+                PlaybackStateCompat.ACTION_PLAY_PAUSE or
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
             )
             .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
             .build()
@@ -212,29 +255,6 @@ class MusicService : MediaBrowserServiceCompat() {
             getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
         }
-    }
-
-    private fun loadTracks(): List<Track> {
-        val prefs = getSharedPreferences("tracks_store", MODE_PRIVATE)
-        val json = prefs.getString("tracks_json", null) ?: return emptyList()
-
-        val array = JSONArray(json)
-        val list = mutableListOf<Track>()
-
-        for (i in 0 until array.length()) {
-            val obj = array.getJSONObject(i)
-
-            list.add(
-                Track(
-                    id = obj.getString("id"),
-                    title = obj.getString("title"),
-                    artist = obj.getString("artist"),
-                    radioUrl = obj.getString("radioUrl")
-                )
-            )
-        }
-
-        return list
     }
 
 }
