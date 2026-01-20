@@ -7,11 +7,25 @@ import org.json.JSONArray
 import org.json.JSONObject
 import android.content.Context
 import android.os.Build
+import com.facebook.react.modules.core.DeviceEventManagerModule
 
 
 class PlayerModule(
     private val reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
+
+    companion object {
+        private var reactContextStatic: ReactApplicationContext? = null
+
+        fun sendPlaybackEvent(params: WritableMap) {
+            reactContextStatic?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                ?.emit("PlaybackUpdate", params)
+        }
+    }
+
+    init {
+        reactContextStatic = reactContext
+    }
 
     override fun getName(): String = "PlayerModule"
 

@@ -16,6 +16,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import com.mymusicapp.model.Track
 import org.json.JSONArray
+import com.mymusicapp.bridge.PlayerModule
 
 class MusicService : MediaBrowserServiceCompat() {
 
@@ -56,6 +57,7 @@ class MusicService : MediaBrowserServiceCompat() {
                 artist = artist ?: "",
                 thumbnailUrl = currentTrack?.thumbnailUrl ?: null
             )
+            sendPlaybackEvent()
         }
 
         mediaSession = MediaSessionCompat(this, "MusicService").apply {
@@ -79,6 +81,7 @@ class MusicService : MediaBrowserServiceCompat() {
                 override fun onPause() {
                     playbackManager.pause()
                     updatePlaybackState(false)
+                    sendPlaybackEvent()
                 }
 
                 override fun onSkipToNext() {
@@ -117,6 +120,7 @@ class MusicService : MediaBrowserServiceCompat() {
                     thumbnailUrl = currentTrack?.thumbnailUrl
                 )
                 updatePlaybackState(true)
+                sendPlaybackEvent()
 
                 startForeground(NOTIFICATION_ID, buildNotification())
             }
@@ -124,11 +128,13 @@ class MusicService : MediaBrowserServiceCompat() {
             ACTION_PAUSE -> {
                 playbackManager.pause()
                 updatePlaybackState(false)
+                sendPlaybackEvent()
             }
 
             ACTION_RESUME -> {
                 playbackManager.resume()
                 updatePlaybackState(true)
+                sendPlaybackEvent()
             }
 
             ACTION_NEXT -> {
@@ -213,6 +219,7 @@ class MusicService : MediaBrowserServiceCompat() {
         playbackManager.play(track.radioUrl)
         updateMetadata(track.title, track.artist, track.thumbnailUrl)
         updatePlaybackState(true)
+        sendPlaybackEvent()
     }
 
     private fun skipToNext() {
@@ -277,6 +284,15 @@ class MusicService : MediaBrowserServiceCompat() {
             getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
         }
+    }
+
+    private fun sendPlaybackEvent() {
+        val map = com.facebook.react.bridge.Arguments.createMap()
+        map.putString("title", currentTrack?.title)
+        map.putString("artist", currentTrack?.artist)
+        map.putString("thumbnailUrl", currentTrack?.thumbnailUrl)
+        map.putBoolean("isPlaying", mediaSession.controller.playbackState.state == PlaybackStateCompat.STATE_PLAYING)
+        PlayerModule.sendPlaybackEvent(map)
     }
 
 }
