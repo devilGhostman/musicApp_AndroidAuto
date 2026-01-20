@@ -40,6 +40,7 @@ class MusicService : MediaBrowserServiceCompat() {
 
     private lateinit var tracks: List<Track>
     private var currentIndex = -1
+    private var currentTrack: Track? = null
 
 
     override fun onCreate() {
@@ -49,7 +50,13 @@ class MusicService : MediaBrowserServiceCompat() {
 
         createNotificationChannel()
 
-        playbackManager = PlaybackManager(this)
+        playbackManager = PlaybackManager(this) { title, artist ->
+            updateMetadata(
+                title = title ?: "Live Radio",
+                artist = artist ?: "",
+                thumbnailUrl = currentTrack?.thumbnailUrl ?: null
+            )
+        }
 
         mediaSession = MediaSessionCompat(this, "MusicService").apply {
 
@@ -65,6 +72,7 @@ class MusicService : MediaBrowserServiceCompat() {
                     if (index == -1) return
 
                     currentIndex = index
+                    currentTrack = tracks[currentIndex]
                     playCurrent()
                 }
 
@@ -100,9 +108,14 @@ class MusicService : MediaBrowserServiceCompat() {
                 val thumbnailUrl = intent.getStringExtra(EXTRA_THUMBNAIL_URL) ?: ""
 
                 currentIndex = tracks.indexOfFirst { it.radioUrl == url }
+                currentTrack = tracks.getOrNull(currentIndex)
 
                 playbackManager.play(url)
-                updateMetadata(title, artist, thumbnailUrl)
+                updateMetadata(
+                    title = title,
+                    artist = artist.ifEmpty { currentTrack?.artist ?: "" },
+                    thumbnailUrl = currentTrack?.thumbnailUrl
+                )
                 updatePlaybackState(true)
 
                 startForeground(NOTIFICATION_ID, buildNotification())
@@ -195,6 +208,8 @@ class MusicService : MediaBrowserServiceCompat() {
         if (tracks.isEmpty() || currentIndex !in tracks.indices) return
 
         val track = tracks[currentIndex]
+        currentTrack = track
+        
         playbackManager.play(track.radioUrl)
         updateMetadata(track.title, track.artist, track.thumbnailUrl)
         updatePlaybackState(true)
