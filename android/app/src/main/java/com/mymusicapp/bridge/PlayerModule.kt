@@ -28,11 +28,13 @@ class PlayerModule(
     fun play(track: ReadableMap) {
         val url = track.getString("radioUrl") ?: return
         val title = track.getString("title") ?: "MyMusicApp"
+        val thumbnailUrl = track.getString("thumbnailUrl") ?: ""
 
         val intent = Intent(reactContext, MusicService::class.java).apply {
             action = MusicService.ACTION_PLAY
             putExtra(MusicService.EXTRA_URL, url)
             putExtra(MusicService.EXTRA_TITLE, title)
+            putExtra(MusicService.EXTRA_THUMBNAIL_URL, thumbnailUrl)
         }
 
         reactContext.startService(intent)

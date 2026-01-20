@@ -29,7 +29,7 @@ class MusicService : MediaBrowserServiceCompat() {
         const val EXTRA_URL = "EXTRA_URL"
         const val EXTRA_TITLE = "EXTRA_TITLE"
         const val EXTRA_ARTIST = "EXTRA_ARTIST"
-        const val EXTRA_THUMBNAIL_URL = ""
+        const val EXTRA_THUMBNAIL_URL = "EXTRA_THUMBNAIL_URL"
 
         const val NOTIFICATION_ID = 1
         const val CHANNEL_ID = "media"
